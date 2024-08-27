@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"bufio"
 	"strings"
+    "sync"
     fp "path/filepath"
 
 	"github.com/justinlime/Rendorg/v2/config"
@@ -47,22 +48,28 @@ func GetProperty(key string, filename string) (PropMatch, error) {
 }
 
 func GetAllProps(orgFiles []string) ([]PropMatch, error){
+    var wg sync.WaitGroup
+    mutex := sync.Mutex{}
+    ch := make(chan struct{}, 10)
     var matches []PropMatch
     for _, org := range orgFiles {
         if fp.Ext(org) == ".org" {
+            wg.Add(1)
+            ch <- struct{}{}
             go func() {
+                defer wg.Done()
+                defer func() { <- ch }()
                 match, err := GetProperty("ID:", org)
                 if err != nil || match.Prop == "" {
                     return
                 }
+                mutex.Lock()
                 matches = append(matches, match)
-                // This prints the matches
-                fmt.Println(matches)
+                mutex.Unlock()
             }()
         }
     }
-    // This prints nothing
-    fmt.Println(matches)
+    wg.Wait()
     return matches, nil
 }
 

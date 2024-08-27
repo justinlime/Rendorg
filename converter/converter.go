@@ -67,7 +67,7 @@ func ConvertAll() {
             Msg("Failed to index the org properties in the directory")
     }
     var wg sync.WaitGroup
-    ch := make(chan struct{}, 10)
+    ch := make(chan struct{}, 5)
     for _, org := range orgFiles {
         if fp.Ext(org) == ".org" {
             wg.Add(1)
