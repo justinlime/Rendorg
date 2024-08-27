@@ -8,7 +8,7 @@ import (
 
 	"github.com/justinlime/Rendorg/v2/utils"
 	"github.com/justinlime/Rendorg/v2/config"
-	conv "github.com/justinlime/Rendorg/v2/converter"
+	// conv "github.com/justinlime/Rendorg/v2/converter"
 
 	"github.com/rs/zerolog/log"
 )
@@ -19,16 +19,16 @@ func Serve(w http.ResponseWriter, r *http.Request) {
     if err != nil {
         fmt.Fprintf(w, "Failure! couldn't read paths!")
     }
-    serveIndex := func() {
-       index, err := conv.GenIndex() 
-        if err != nil {
-            log.Error().Err(err).Msg("Failed to serve index")
-            fmt.Fprintf(w, "Something went wrong")
-            return
-        }
-        w.Header().Set("Content-Type", "text/html")
-        fmt.Fprintf(w, *index)
-    }
+    // serveIndex := func() {
+    //    index, err := conv.GenIndex() 
+    //     if err != nil {
+    //         log.Error().Err(err).Msg("Failed to serve index")
+    //         fmt.Fprintf(w, "Something went wrong")
+    //         return
+    //     }
+    //     w.Header().Set("Content-Type", "text/html")
+    //     fmt.Fprintf(w, *index)
+    // }
     rootEntry := func(path string) string {
         for _, file := range files {
             mappedRoot := strings.ReplaceAll(file, config.Cfg.InputDir, "")
@@ -39,15 +39,13 @@ func Serve(w http.ResponseWriter, r *http.Request) {
         return ""
     }
     if r.URL.Path == "/" {
-        serveIndex()
+        // serveIndex()
+        http.ServeFile(w, r, "/tmp/rendorg/rendorg_index.html")
     } else if match := rootEntry(r.URL.Path); match != "" {
         if fp.Ext(r.URL.Path) == ".org" {
-            html, err := conv.Convert(match)
-            if err != nil {
-                fmt.Fprintf(w, "Failure!")
-            }
-            w.Header().Set("Content-Type", "text/html")
-            fmt.Fprintf(w, *html)
+            name := strings.ReplaceAll(r.URL.Path, ".org", ".html")
+            outPath := fp.Join("/tmp/rendorg", name)
+            http.ServeFile(w, r, outPath)
         } else {
             http.ServeFile(w, r, match)
         }

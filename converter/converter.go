@@ -17,19 +17,19 @@ import (
 	"github.com/alecthomas/chroma/v2/formatters/html"
 )
 
-func Convert(inputFile string) (*string, error) {
+func Convert(inputFile string) error {
 	file, err := os.Open(inputFile)
 	if err != nil {
-        return nil, fmt.Errorf("Couldnt open the requested file: %v", err)
+        return fmt.Errorf("Couldnt open the requested file: %v", err)
 	}
     title, err := GetProperty("title:", inputFile)
-    if err != nil {
-        title = file.Name()[:len(file.Name())-len(fp.Ext(file.Name()))]
+    if err != nil || title.Prop == "" {
+        title.Prop = file.Name()[:len(file.Name())-len(fp.Ext(file.Name()))]
     }
 	defer file.Close()
 	d := org.New().Parse(file, inputFile)
-	write := func(w org.Writer) (*string, error) {
-        prefix, err := generatePrefix(title)
+	write := func(w org.Writer)  (*string, error) {
+        prefix, err := generatePrefix(title.Prop)
         if err != nil {
             return nil, fmt.Errorf("Failed to generate prefix for org file: %v", err)
         }
@@ -41,26 +41,54 @@ func Convert(inputFile string) (*string, error) {
         </body>
         `
         contents := *prefix + body + suffix
-        return &contents , nil
+        return &contents, nil
 	}
     writer := org.NewHTMLWriter()
     writer.HighlightCodeBlock = highlightCodeBlock
     html, err := write(writer)
     if err != nil {
-        return nil, err
+        return err
     }
-    return ResolveLinks(html)
+    err = ResolveLinks(inputFile , html)
+    if err != nil {
+        return fmt.Errorf("Failed to resolve links for %s: %v", inputFile, err)
+    }
+    return nil
+}
+
+func ConvertAll() {
+    orgFiles, err := utils.GetPathsRecursively(config.Cfg.InputDir)
+    if err != nil {
+        log.Error().Err(err).
+            Str("dir", config.Cfg.InputDir).
+            Msg("Failed to recurse through the input directory")
+    }
+    for _, org := range orgFiles {
+        if fp.Ext(org) == ".org" {
+            go func() {
+                err := Convert(org)
+                if err != nil {
+                    log.Error().Err(err).
+                        Str("file", org).
+                        Msg("Failed to convert file")
+                }
+            }()
+        }
+    }
+    if err := GenIndex(); err != nil {
+        log.Error().Err(err).Msg("Failed to generate the index page") 
+    }
 }
 
 // TODO add searching feature
-func GenIndex() (*string, error) {
+func GenIndex() error {
     index, err := generatePrefix("Rendorg")     
     if err != nil {
-        return nil, fmt.Errorf("Failed to generate index - %v", err)
+        return fmt.Errorf("Failed to generate index - %v", err)
     }
     files, err := utils.GetPathsRecursively(config.Cfg.InputDir)
     if err != nil {
-        return nil, fmt.Errorf("Failed to read root dir - %v", err)
+        return fmt.Errorf("Failed to read root dir - %v", err)
     }
     *index += `<h1 class="index-title" id="index-title">Rendorg</h1>`
     var links []string
@@ -68,15 +96,22 @@ func GenIndex() (*string, error) {
         if fp.Ext(file) == ".org" {
             title, err := GetProperty("title:", file)
             if err != nil {
-                title = strings.TrimSuffix(fp.Base(file), ".org")
+                title.Prop = strings.TrimSuffix(fp.Base(file), ".org")
             }
             linkPath := strings.ReplaceAll(file, config.Cfg.InputDir, "")
-            links = append(links, fmt.Sprintf(`<a class="index-link" href="%s">%s</a>`, linkPath, title))
+            links = append(links, fmt.Sprintf(`<a class="index-link" href="%s">%s</a>`, linkPath, title.Prop))
         }
     }
     *index += "\n" + strings.Join(links, "\n")
     *index += "</body>"
-    return index, nil
+    htmlFile, err := os.Create("/tmp/rendorg/rendorg_index.html")
+    if err != nil {
+        return err
+    }
+    if _, err := htmlFile.Write([]byte(*index)); err != nil {
+        return err
+    }
+    return nil
 }
 
 // Returns HTML boilerplate
@@ -106,12 +141,12 @@ func generatePrefix(title string) (*string, error) {
     jsDir := fp.Join(config.Cfg.InputDir, "js")
     _, err = os.Stat(jsDir)
     if err != nil {
-        log.Warn().Err(err).Str("dir", styleDir).
+        log.Warn().Err(err).Str("dir", jsDir).
             Msg("Couldn't stat js dir, nothing will be applied.")
     } else {
         jsFiles , err = utils.GetPathsRecursively(fp.Join(config.Cfg.InputDir, "style")) 
         if err != nil {
-            log.Warn().Err(err).Str("dir", styleDir).
+            log.Warn().Err(err).Str("dir", jsDir).
                 Msg("Coudln't read js dir, nothing will be applied")
         }
     }

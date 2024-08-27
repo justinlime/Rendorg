@@ -7,6 +7,7 @@ import (
 	"github.com/justinlime/Rendorg/v2/logger"
 	"github.com/justinlime/Rendorg/v2/config"
 	"github.com/justinlime/Rendorg/v2/webserver"
+    conv "github.com/justinlime/Rendorg/v2/converter"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -48,5 +49,7 @@ func main() {
         Str("config_dir", configDir).
         Msg("Using the following directories")
     config.InitConfig(configDir, inputDir)
+    conv.ConvertAll()
     webserver.StartServer()
+    select{}
 }

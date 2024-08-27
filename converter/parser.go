@@ -11,12 +11,17 @@ import (
 	"github.com/justinlime/Rendorg/v2/utils"
 )
 
+type PropMatch struct {
+    Prop string
+    File string
+}
+
 // Scan an org file for tags using a key, such as :TITLE
 // or :ID
-func GetProperty(key string, filename string) (string, error) {
+func GetProperty(key string, filename string) (PropMatch, error) {
     file, err := os.Open(filename)
     if err != nil {
-        return "", err
+        return PropMatch{}, err
     }
 
     scanner := bufio.NewScanner(file)
@@ -32,33 +37,49 @@ func GetProperty(key string, filename string) (string, error) {
                 }
                 combined += " " + part
             }
-            return strings.TrimLeft(combined, " "), nil
+            return PropMatch {
+                Prop: strings.TrimLeft(combined, " "),
+                File: filename,
+            }, nil
         } 
     }
-    return "", fmt.Errorf("Could now locate property %s", key)
+    return PropMatch{}, fmt.Errorf("Could now locate property %s", key)
 }
 
 // Resolve org roam links in the file to actual HTML links
-func ResolveLinks(contents *string) (*string, error) {
+func ResolveLinks(inputFile string, contents *string) error {
     orgFiles, err := utils.GetPathsRecursively(config.Cfg.InputDir)
     if err != nil {
-        return nil, fmt.Errorf("Failed to get the filepaths from the output dir")
+        return fmt.Errorf("Failed to get the filepaths from the output dir")
     }
-    orgIDs := make(map[string]string)
+    var matches []PropMatch
     for _, org := range orgFiles {
         if fp.Ext(org) == ".org" {
-            id, err := GetProperty("ID:", org)
-            if err != nil {
-                continue
-            }
-            orgIDs[org] = id
+            go func() {
+                match, err := GetProperty("ID:", org)
+                if err != nil || match.Prop == "" {
+                    return
+                }
+                matches = append(matches, match)
+            }()
         }
     }
     resolved := *contents
-    for org, id := range orgIDs {
-        origLink := fmt.Sprintf(`href="id:%s"`, id)
-        replLink := fmt.Sprintf(`href="%s"`, strings.ReplaceAll(org, config.Cfg.InputDir, ""))
+    for _, match := range matches {
+        origLink := fmt.Sprintf(`href="id:%s"`, match.Prop)
+        replLink := fmt.Sprintf(`href="%s"`, strings.ReplaceAll(match.File, config.Cfg.InputDir, ""))
         resolved = strings.ReplaceAll(resolved, origLink, replLink)
     }
-    return &resolved, nil
+    if err := os.MkdirAll("/tmp/rendorg", 0755); err != nil {
+        return fmt.Errorf("Failed to create tmp directory")
+    }
+    outPath := strings.ReplaceAll(inputFile, config.Cfg.InputDir, "/tmp/rendorg")
+    htmlFile, err := os.Create(strings.ReplaceAll(outPath, ".org", ".html"))
+    if err != nil {
+        return err
+    }
+    if _, err := htmlFile.Write([]byte(resolved)); err != nil {
+        return err
+    }
+    return nil
 }
