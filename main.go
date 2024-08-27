@@ -51,6 +51,6 @@ func main() {
         Msg("Using the following directories")
     config.InitConfig(configDir, inputDir)
     conv.ConvertAll()
-    monitor.Monitor()
+    go monitor.Monitor()
     webserver.StartServer()
 }

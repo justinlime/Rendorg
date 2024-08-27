@@ -49,7 +49,9 @@ func GetProperty(key string, filename string) (PropMatch, error) {
 
 func GetAllProps(orgFiles []string) ([]PropMatch, error){
     var wg sync.WaitGroup
-    ch := make(chan PropMatch, 10)
+    // FIXME This really doesn't save much time, whether its 1 or 100
+    // remove the concurrency from this 
+    ch := make(chan PropMatch, 1)
     for _, org := range orgFiles {
         if fp.Ext(org) == ".org" {
             wg.Add(1)

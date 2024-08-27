@@ -1,7 +1,6 @@
 package monitor
 
 import (
-	"fmt"
 	"io/fs"
 	fp "path/filepath"
 
@@ -32,7 +31,8 @@ func watchDir(watcher *fsnotify.Watcher, dir string) {
         return nil
     })
 }
-
+// FIXME when editing large files, some editors may send a write message
+// twice, add some type of timeout period to stop this.
 func Monitor() {
 	// Create a new watcher
 	watcher, err := fsnotify.NewWatcher()
@@ -48,7 +48,6 @@ func Monitor() {
 
 	// Channel to receive events
 	done := make(chan bool)
-    i := 0
 	go func() {
 		for {
 			select {
@@ -60,17 +59,18 @@ func Monitor() {
                 }
                 switch {
                 case event.Has(fsnotify.Remove) ||
+                     event.Has(fsnotify.Create) ||
                      event.Has(fsnotify.Write):
-                    if fp.Ext(event.Name) == ".org" {
-                        log.Info().Str("file", event.Name).
-                            Msg("File changed")
-                        conv.ConvertAll() 
+                    if event.Op.String() != "REMOVE" {
+                        watchDir(watcher, event.Name)
                     }
+                    conv.ConvertAll() 
+                    log.Info().Str("file", event.Name).
+                        Str("event", event.Op.String()).
+                        Msg("File changed")
                 default:
                     continue
                 }
-                i += 1
-                fmt.Println(i)
 			case err, ok := <-watcher.Errors:
 				if !ok {
 					return

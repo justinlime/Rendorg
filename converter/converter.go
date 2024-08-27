@@ -79,10 +79,12 @@ func ConvertAll() {
     }
 
     var wg sync.WaitGroup
-    ch := make(chan struct{}, 2)
+    ch := make(chan struct{}, 3)
+    var count int
     for _, org := range orgFiles {
         if fp.Ext(org) == ".org" {
             wg.Add(1)
+            count += 1
             ch <- struct{}{}
             go func() {
                 defer wg.Done()
@@ -101,6 +103,10 @@ func ConvertAll() {
                 }
                 outPath := strings.ReplaceAll(strings.ReplaceAll(org, config.Cfg.InputDir, "/tmp/rendorg"),
                     ".org", ".html")
+                if err := os.MkdirAll(fp.Dir(outPath), 0755); err != nil {
+                    log.Error().Err(err).Str("dir", fp.Dir(outPath)).
+                        Msg("Failed to create the destination path for the HTML file")
+                }
                 htmlFile, err := os.Create(outPath)
                 if err != nil {
                     log.Error().Err(err).Str("file", outPath).
@@ -118,8 +124,7 @@ func ConvertAll() {
         log.Error().Err(err).Msg("Failed to generate the index page") 
     }
     duration := fmt.Sprintf("%fs", time.Since(begin).Seconds())
-    // +1 for the index :D
-    log.Info().Int("number_of_files", len(orgFiles) + 1).Str("time_elapsed", duration).Msg("Conversion Complete")
+    log.Info().Int("org_files_converted", count).Str("time_elapsed", duration).Msg("Conversion Complete")
 }
 
 // TODO add searching feature
@@ -180,29 +185,31 @@ func generatePrefix(title string) (*string, error) {
                 Msg("Coudln't read style dir, nothing will be applied")
         }
     }
+
     jsDir := fp.Join(config.Cfg.InputDir, "js")
     _, err = os.Stat(jsDir)
     if err != nil {
         log.Warn().Err(err).Str("dir", jsDir).
             Msg("Couldn't stat js dir, nothing will be applied.")
     } else {
-        jsFiles , err = utils.GetPathsRecursively(fp.Join(config.Cfg.InputDir, "style")) 
+        jsFiles , err = utils.GetPathsRecursively(fp.Join(config.Cfg.InputDir, "js")) 
         if err != nil {
             log.Warn().Err(err).Str("dir", jsDir).
                 Msg("Coudln't read js dir, nothing will be applied")
         }
     }
+
     for _, css := range cssFiles {
         if fp.Ext(css) == ".css" {
-            prefix += fmt.Sprintf(`<link rel="stylesheet" href="%s">`, strings.ReplaceAll(css, config.Cfg.InputDir, ""))
+            prefix += fmt.Sprintf(`<link rel="stylesheet" href="%s">` + "\n", strings.ReplaceAll(css, config.Cfg.InputDir, ""))
         }
     }
     for _, js := range jsFiles {
         if fp.Ext(js) == ".js" {
-            prefix += fmt.Sprintf(`<script src="js%s" defer></script>`, strings.ReplaceAll(js, config.Cfg.InputDir, ""))
+            prefix += fmt.Sprintf(`<script src="%s" defer></script>` + "\n", strings.ReplaceAll(js, config.Cfg.InputDir, ""))
         }
     }
-    prefix += "<body>"
+    prefix += "<body>\n"
     return &prefix, nil
 }
 
