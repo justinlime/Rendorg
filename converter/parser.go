@@ -8,7 +8,7 @@ import (
     fp "path/filepath"
 
 	"github.com/justinlime/Rendorg/v2/config"
-	"github.com/justinlime/Rendorg/v2/utils"
+	// "github.com/justinlime/Rendorg/v2/utils"
 )
 
 type PropMatch struct {
@@ -46,12 +46,7 @@ func GetProperty(key string, filename string) (PropMatch, error) {
     return PropMatch{}, fmt.Errorf("Could now locate property %s", key)
 }
 
-// Resolve org roam links in the file to actual HTML links
-func ResolveLinks(inputFile string, contents *string) error {
-    orgFiles, err := utils.GetPathsRecursively(config.Cfg.InputDir)
-    if err != nil {
-        return fmt.Errorf("Failed to get the filepaths from the output dir")
-    }
+func GetAllProps(orgFiles []string) ([]PropMatch, error){
     var matches []PropMatch
     for _, org := range orgFiles {
         if fp.Ext(org) == ".org" {
@@ -61,11 +56,20 @@ func ResolveLinks(inputFile string, contents *string) error {
                     return
                 }
                 matches = append(matches, match)
+                // This prints the matches
+                fmt.Println(matches)
             }()
         }
     }
+    // This prints nothing
+    fmt.Println(matches)
+    return matches, nil
+}
+
+// Resolve org roam links in the file to actual HTML links
+func ResolveLinks(inputFile string, contents *string, candidates []PropMatch) error {
     resolved := *contents
-    for _, match := range matches {
+    for _, match := range candidates {
         origLink := fmt.Sprintf(`href="id:%s"`, match.Prop)
         replLink := fmt.Sprintf(`href="%s"`, strings.ReplaceAll(match.File, config.Cfg.InputDir, ""))
         resolved = strings.ReplaceAll(resolved, origLink, replLink)

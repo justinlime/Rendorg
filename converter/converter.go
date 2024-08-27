@@ -3,6 +3,7 @@ package converter
 import (
 	"os"
     "fmt"
+    "sync"
 	"strings"
 	fp "path/filepath"
 
@@ -17,10 +18,10 @@ import (
 	"github.com/alecthomas/chroma/v2/formatters/html"
 )
 
-func Convert(inputFile string) error {
+func Convert(inputFile string) (*string, error) {
 	file, err := os.Open(inputFile)
 	if err != nil {
-        return fmt.Errorf("Couldnt open the requested file: %v", err)
+        return nil, fmt.Errorf("Couldnt open the requested file: %v", err)
 	}
     title, err := GetProperty("title:", inputFile)
     if err != nil || title.Prop == "" {
@@ -47,13 +48,9 @@ func Convert(inputFile string) error {
     writer.HighlightCodeBlock = highlightCodeBlock
     html, err := write(writer)
     if err != nil {
-        return err
+        return nil, err 
     }
-    err = ResolveLinks(inputFile , html)
-    if err != nil {
-        return fmt.Errorf("Failed to resolve links for %s: %v", inputFile, err)
-    }
-    return nil
+    return html, nil
 }
 
 func ConvertAll() {
@@ -63,18 +60,54 @@ func ConvertAll() {
             Str("dir", config.Cfg.InputDir).
             Msg("Failed to recurse through the input directory")
     }
+    allProps , err := GetAllProps(orgFiles)
+    if err != nil {
+        log.Error().Err(err).
+            Str("dir", config.Cfg.InputDir).
+            Msg("Failed to index the org properties in the directory")
+    }
+    var wg sync.WaitGroup
+    ch := make(chan struct{}, 10)
     for _, org := range orgFiles {
         if fp.Ext(org) == ".org" {
+            wg.Add(1)
+            ch <- struct{}{}
             go func() {
-                err := Convert(org)
+                defer wg.Done()
+                defer func() { <-ch }()
+                content, err := Convert(org)
                 if err != nil {
                     log.Error().Err(err).
                         Str("file", org).
                         Msg("Failed to convert file")
                 }
+                resolved := *content
+                for _, match := range allProps {
+                    origLink := fmt.Sprintf(`href="id:%s"`, match.Prop)
+                    replLink := fmt.Sprintf(`href="%s"`, strings.ReplaceAll(match.File, config.Cfg.InputDir, ""))
+                    resolved = strings.ReplaceAll(resolved, origLink, replLink)
+                }
+                if err := os.MkdirAll("/tmp/rendorg", 0755); err != nil {
+                    // return fmt.Errorf("Failed to create tmp directory")
+                    log.Error().Err(err).Str("dir", "/tmp/rendorg").
+                        Msg("Failed to create temp directory")
+                        
+                }
+                outPath := strings.ReplaceAll(strings.ReplaceAll(org, config.Cfg.InputDir, "/tmp/rendorg"),
+                    ".org", ".html")
+                htmlFile, err := os.Create(outPath)
+                if err != nil {
+                    log.Error().Err(err).Str("file", outPath).
+                        Msg("Failed to create converted HTML file")
+                }
+                if _, err := htmlFile.Write([]byte(resolved)); err != nil {
+                    log.Error().Err(err).Str("file", outPath).
+                        Msg("Failed to write converted HTML file")
+                }
             }()
         }
     }
+    wg.Wait()
     if err := GenIndex(); err != nil {
         log.Error().Err(err).Msg("Failed to generate the index page") 
     }
