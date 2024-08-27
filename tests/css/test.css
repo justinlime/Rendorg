@@ -1,0 +1,150 @@
+/* Media Scaling */
+@media(min-width:2001px){
+    :root{
+        font-size: 18px;
+    }
+}
+@media(max-width: 2000px){
+    :root{
+        font-size: 16px;
+    }
+}
+@media(max-width: 900px){
+    :root{
+        font-size: 14px;
+    }
+}
+@media(max-width: 600px){
+    :root{
+        font-size: 12px;
+    }
+}
+@media(max-width: 350px){
+    :root{
+        font-size: 10px;
+    }
+}
+/* Fonts */
+@font-face {
+    font-family: robotoflex;
+    src: url("fonts/RobotoFlex/RobotoFlex.ttf") format("truetype");
+    font-weight: normal;
+}
+@font-face {
+    font-family: robotomono;
+    src: url("fonts/RobotoMonoNF/RobotoMonoNerdFontMono-Regular.ttf") format("truetype");
+    font-weight: normal;
+}
+@font-face {
+    font-family: robotomono;
+    src: url("fonts/RobotoMonoNF/RobotoMonoNerdFontMono-Bold.ttf") format("truetype");
+    font-weight: bold;
+}
+@font-face {
+    font-family: robotomono;
+    src: url("fonts/RobotoMonoNF/RobotoMonoNerdFontMono-SemiBold.ttf") format("truetype");
+    font-weight: semi-bold;
+}
+
+:root{
+    color: whitesmoke;
+    font-family: robotoflex,sans-serif;
+}
+body {
+    margin: 0;
+    padding: 2rem;
+    background-color: #1e1e2e;
+}
+
+/* Headings */
+[id*=headline] > h1, h2, h3, h4, h5, h6 {
+    font-weight: bold;
+    margin: 0.25rem 0 0.25rem 0;
+    display: inline-block;
+    padding: 0.5rem 1rem 0.5rem 1rem;
+    text-align: center;
+}
+h2 {
+    font-size: 2.25rem;
+    display: block;
+    border-bottom-style: solid;
+}
+h3 {
+    font-size: 2rem;
+    background-color: #161621;
+    border-radius: 0.5rem;
+}
+h4 {
+    font-size: 1.75rem;
+    background-color: #161621;
+    border-radius: 0.5rem;
+}
+h5 {
+    font-size: 1.25rem;
+    background-color: #161621;
+    border-radius: 0.5rem;
+}
+[class*="outline-"] > p, pre, .example {
+    margin-left: 1rem;    
+}
+/* Links */
+a {
+    text-decoration: none;
+    color: #89b4fa;
+    transition: .4s;
+}
+a:hover {
+    color: brown;
+}
+/* title */
+.title {
+    text-align: center;
+    padding: 3rem;
+    background-color: #161621;
+    margin: 0 0 1rem 0;
+    font-size: 3rem;
+    word-wrap: break-word;
+    border-radius: 2rem;
+    font-weight: bold;
+}
+/* nav */
+nav * {
+    font-size: 1.25rem;
+    list-style-type: disc;
+}
+/* code blocks  */
+.src span{
+    background-color: #11111B;
+}
+.src pre, .example {
+    border-radius: 0.5rem;
+    background-color: #11111B !important;
+    padding: 1.25rem;
+    overflow-x: auto;
+}
+.src * {
+    font-family: robotomono,sans-serif;
+    font-weight: bold;
+    font-size: 0.8rem;
+}
+p {
+    padding: 0.4rem 0 0.4rem 0;
+    margin: 0;
+}
+dt {
+    margin-left: 1rem;
+    font-weight: bold;
+}
+
+img {
+    width: 100%;
+}
+
+code:not(pre code) {
+    font-family: robotomono,sans-serif;
+    background: #11111B;
+    border-radius: 0.3rem;
+    padding: 0.05rem 0.5rem 0.05rem 0.5rem;
+    color: #eba0ac;
+    font-weight: bold;
+}

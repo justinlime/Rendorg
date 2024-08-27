@@ -1,0 +1,14 @@
+* Rendorg :toc_4:
+    - [[#features][Features]]
+    - [[#usage][Usage]]
+
+*** Features
+- Code block syntax highlighting, with [[https://xyproto.github.io/splash/docs/all.html][customizable themes]]
+- Custom CSS/JS
+- Resolves [[https://www.orgroam.com][org roam]] links 
+- HTML rendering powered by [[https://github.com/niklasfasching/go-org][go-org]]
+*** Usage 
+#+begin_src bash
+go run . --input /path/to/my/org-files
+#+end_src
+The webserver will be listening by default at =localhost:6969=
