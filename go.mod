@@ -5,6 +5,7 @@ go 1.22.5
 require (
 	github.com/BurntSushi/toml v1.4.0
 	github.com/alecthomas/chroma/v2 v2.14.0
+	github.com/fsnotify/fsnotify v1.7.0
 	github.com/niklasfasching/go-org v1.7.0
 	github.com/rs/zerolog v1.33.0
 )

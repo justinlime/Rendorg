@@ -1,12 +1,12 @@
 package converter
 
 import (
-	"os"
-	"fmt"
 	"bufio"
+	"fmt"
+	"os"
+	fp "path/filepath"
 	"strings"
-    "sync"
-    fp "path/filepath"
+	"sync"
 
 	"github.com/justinlime/Rendorg/v2/config"
 	// "github.com/justinlime/Rendorg/v2/utils"
@@ -49,27 +49,28 @@ func GetProperty(key string, filename string) (PropMatch, error) {
 
 func GetAllProps(orgFiles []string) ([]PropMatch, error){
     var wg sync.WaitGroup
-    mutex := sync.Mutex{}
-    ch := make(chan struct{}, 10)
-    var matches []PropMatch
+    ch := make(chan PropMatch, 10)
     for _, org := range orgFiles {
         if fp.Ext(org) == ".org" {
             wg.Add(1)
-            ch <- struct{}{}
             go func() {
                 defer wg.Done()
-                defer func() { <- ch }()
                 match, err := GetProperty("ID:", org)
                 if err != nil || match.Prop == "" {
                     return
                 }
-                mutex.Lock()
-                matches = append(matches, match)
-                mutex.Unlock()
+                ch <- match
             }()
         }
     }
-    wg.Wait()
+    go func(){
+        wg.Wait()
+        close(ch)
+    }()
+    var matches []PropMatch
+    for match := range ch {
+        matches = append(matches, match)
+    }
     return matches, nil
 }
 

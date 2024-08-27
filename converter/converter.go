@@ -4,6 +4,7 @@ import (
 	"os"
     "fmt"
     "sync"
+    "time"
 	"strings"
 	fp "path/filepath"
 
@@ -54,6 +55,16 @@ func Convert(inputFile string) (*string, error) {
 }
 
 func ConvertAll() {
+    begin := time.Now()
+    err := os.RemoveAll("/tmp/rendorg")
+    if err != nil {
+        log.Error().Err(err).Msg("Failed to clean up the temporary directory")
+    }
+    if err := os.MkdirAll("/tmp/rendorg", 0755); err != nil {
+        log.Error().Err(err).Str("dir", "/tmp/rendorg").
+            Msg("Failed to create temp directory")
+
+    }
     orgFiles, err := utils.GetPathsRecursively(config.Cfg.InputDir)
     if err != nil {
         log.Error().Err(err).
@@ -66,8 +77,9 @@ func ConvertAll() {
             Str("dir", config.Cfg.InputDir).
             Msg("Failed to index the org properties in the directory")
     }
+
     var wg sync.WaitGroup
-    ch := make(chan struct{}, 5)
+    ch := make(chan struct{}, 2)
     for _, org := range orgFiles {
         if fp.Ext(org) == ".org" {
             wg.Add(1)
@@ -87,12 +99,6 @@ func ConvertAll() {
                     replLink := fmt.Sprintf(`href="%s"`, strings.ReplaceAll(match.File, config.Cfg.InputDir, ""))
                     resolved = strings.ReplaceAll(resolved, origLink, replLink)
                 }
-                if err := os.MkdirAll("/tmp/rendorg", 0755); err != nil {
-                    // return fmt.Errorf("Failed to create tmp directory")
-                    log.Error().Err(err).Str("dir", "/tmp/rendorg").
-                        Msg("Failed to create temp directory")
-                        
-                }
                 outPath := strings.ReplaceAll(strings.ReplaceAll(org, config.Cfg.InputDir, "/tmp/rendorg"),
                     ".org", ".html")
                 htmlFile, err := os.Create(outPath)
@@ -111,6 +117,9 @@ func ConvertAll() {
     if err := GenIndex(); err != nil {
         log.Error().Err(err).Msg("Failed to generate the index page") 
     }
+    duration := fmt.Sprintf("%fs", time.Since(begin).Seconds())
+    // +1 for the index :D
+    log.Info().Int("number_of_files", len(orgFiles) + 1).Str("time_elapsed", duration).Msg("Conversion Complete")
 }
 
 // TODO add searching feature
