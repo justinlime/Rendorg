@@ -2,16 +2,19 @@ package webserver
 
 import (
 	"fmt"
-    "strings"
 	"net/http"
-    fp "path/filepath"
+	fp "path/filepath"
+	"strings"
 
-	"github.com/justinlime/Rendorg/v2/utils"
+	// conv "github.com/justinlime/Rendorg/v2/converter"
 	"github.com/justinlime/Rendorg/v2/config"
+	"github.com/justinlime/Rendorg/v2/utils"
+
 	// conv "github.com/justinlime/Rendorg/v2/converter"
 
 	"github.com/rs/zerolog/log"
 )
+
 
 // TODO maybe add optional path remapping
 func Serve(w http.ResponseWriter, r *http.Request) {
@@ -19,16 +22,6 @@ func Serve(w http.ResponseWriter, r *http.Request) {
     if err != nil {
         fmt.Fprintf(w, "Failure! couldn't read paths!")
     }
-    // serveIndex := func() {
-    //    index, err := conv.GenIndex() 
-    //     if err != nil {
-    //         log.Error().Err(err).Msg("Failed to serve index")
-    //         fmt.Fprintf(w, "Something went wrong")
-    //         return
-    //     }
-    //     w.Header().Set("Content-Type", "text/html")
-    //     fmt.Fprintf(w, *index)
-    // }
     rootEntry := func(path string) string {
         for _, file := range files {
             mappedRoot := strings.ReplaceAll(file, config.Cfg.InputDir, "")
@@ -39,7 +32,6 @@ func Serve(w http.ResponseWriter, r *http.Request) {
         return ""
     }
     if r.URL.Path == "/" {
-        // serveIndex()
         http.ServeFile(w, r, "/tmp/rendorg/rendorg_index.html")
     } else if match := rootEntry(r.URL.Path); match != "" {
         if fp.Ext(r.URL.Path) == ".org" {
@@ -52,8 +44,7 @@ func Serve(w http.ResponseWriter, r *http.Request) {
     }
 }
 
-// TODO make auth optional, actually store in a secure way
-
+// Todo make auth optional, actually store in a secure way
 func Auth(next http.Handler) http.Handler {
         return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
         user, pass, ok := r.BasicAuth()
