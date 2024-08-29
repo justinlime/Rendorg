@@ -4,13 +4,9 @@ import (
 	"fmt"
 	"net/http"
 	fp "path/filepath"
-	"strings"
 
-	// conv "github.com/justinlime/Rendorg/v2/converter"
 	"github.com/justinlime/Rendorg/v2/config"
-	"github.com/justinlime/Rendorg/v2/utils"
-
-	// conv "github.com/justinlime/Rendorg/v2/converter"
+	conv "github.com/justinlime/Rendorg/v2/converter"
 
 	"github.com/rs/zerolog/log"
 )
@@ -18,30 +14,17 @@ import (
 
 // TODO maybe add optional path remapping
 func Serve(w http.ResponseWriter, r *http.Request) {
-    files, err := utils.GetPathsRecursively(config.Cfg.InputDir)
-    if err != nil {
-        fmt.Fprintf(w, "Failure! couldn't read paths!")
-    }
-    rootEntry := func(path string) string {
-        for _, file := range files {
-            mappedRoot := strings.ReplaceAll(file, config.Cfg.InputDir, "")
-            if path == mappedRoot {
-                return file 
-            }
-        } 
-        return ""
-    }
     if r.URL.Path == "/" {
         http.ServeFile(w, r, "/tmp/rendorg/rendorg_index.html")
-    } else if match := rootEntry(r.URL.Path); match != "" {
-        if fp.Ext(r.URL.Path) == ".org" {
-            name := strings.ReplaceAll(r.URL.Path, ".org", ".html")
-            outPath := fp.Join("/tmp/rendorg", name)
-            http.ServeFile(w, r, outPath)
-        } else {
-            http.ServeFile(w, r, match)
+        return
+    }
+    for _, of := range conv.OrgFiles {
+        if r.URL.Path == of.WebPath {
+            http.ServeFile(w, r, of.HTMLPath)
+            return
         }
     }
+    http.ServeFile(w, r, fp.Join(config.Cfg.InputDir, r.URL.Path))
 }
 
 // Todo make auth optional, actually store in a secure way

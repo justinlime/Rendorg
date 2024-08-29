@@ -24,9 +24,24 @@ type OrgFile struct {
     LinkedIDs []string
 }
 
-var OrgFiles []OrgFile
+var (
+    OrgFiles []OrgFile
+    mu sync.Mutex
+)
 
 func Convert(inputFile string) (OrgFile, error) {
+    // Remove the previous entries
+    mu.Lock()
+    var orgFiles []OrgFile
+    for _, of := range OrgFiles {
+        if of.RealPath == inputFile {
+            continue
+        }
+        orgFiles = append(orgFiles, of)
+    }
+    OrgFiles = orgFiles
+    mu.Unlock()
+    // Create the file
 	file, err := os.Open(inputFile)
 	if err != nil {
         return OrgFile{}, fmt.Errorf("Couldnt open the requested file: %v", err)
@@ -92,6 +107,17 @@ func ConvertAll() {
             Str("dir", config.Cfg.InputDir).
             Msg("Failed to recurse through the input directory")
     }
+    for _, org := range orgFiles {
+        if fp.Ext(org) == ".org" {
+            of, err:= NewOrg(org)
+            if err != nil {
+                log.Error().Err(err).
+                    Str("file", org).
+                    Msg("Failed to track org properties")
+            }
+            OrgFiles = append(OrgFiles, of)
+        }
+    }
     var wg sync.WaitGroup
     ch := make(chan struct{}, 3)
     var count int
@@ -118,21 +144,6 @@ func ConvertAll() {
     }
     duration := fmt.Sprintf("%fs", time.Since(begin).Seconds())
     log.Info().Int("org_files_converted", count).Str("time_elapsed", duration).Msg("Conversion Complete")
-}
-
-
-// Resolve org roam links in the file to actual HTML links
-func ResolveLinks(contents *string, orgFile OrgFile) *string {
-    resolved := *contents
-    for _, org := range OrgFiles {
-        // log.Info().Strs("ids", org.LinkedIDs).Str("comapred-id", org.ID).Msg("Test")
-        if utils.Contains(orgFile.LinkedIDs, org.ID) {
-            origLink := fmt.Sprintf(`href="id:%s"`, org.ID)
-            replLink := fmt.Sprintf(`href="%s"`, org.HTMLPath)
-            resolved = strings.ReplaceAll(resolved, origLink, replLink)
-        }
-    }
-    return &resolved
 }
 
 func NewOrg(inputFile string) (OrgFile, error) {

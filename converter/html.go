@@ -93,40 +93,23 @@ func highlightCodeBlock(source, lang string, inline bool, params map[string]stri
 }
 
 // TODO add searching feature
-// func GenIndex() error {
-//     index, err := generatePrefix("Rendorg")     
-//     if err != nil {
-//         return fmt.Errorf("Failed to generate index - %v", err)
-//     }
-//     files, err := utils.GetPathsRecursively(config.Cfg.InputDir)
-//     if err != nil {
-//         return fmt.Errorf("Failed to read root dir - %v", err)
-//     }
-//     *index += `<h1 class="index-title" id="index-title">Rendorg</h1>`
-//     var links []string
-//     for _, file := range files {
-//         if fp.Ext(file) == ".org" {
-//             title, err := GetProperty("title", file)
-//             if err != nil {
-//                 title = strings.TrimSuffix(fp.Base(file), ".org")
-//             }
-//             linkPath := strings.ReplaceAll(file, config.Cfg.InputDir, "")
-//             links = append(links, fmt.Sprintf(`<a class="index-link" href="%s">%s</a>`, linkPath, title))
-//         }
-//     }
-//     *index += "\n" + strings.Join(links, "\n")
-//     *index += "</body>"
-//     htmlFile, err := os.Create("/tmp/rendorg/rendorg_index.html")
-//     if err != nil {
-//         return err
-//     }
-//     if _, err := htmlFile.Write([]byte(*index)); err != nil {
-//         return err
-//     }
-//     return nil
-// }
-
 func GenIndex() error {
-    fmt.Println("Hello")
+    index, err := generatePrefix("Rendorg")     
+    if err != nil {
+        return fmt.Errorf("Failed to generate index - %v", err)
+    }
+    *index += `<h1 class="index-title" id="index-title">Rendorg</h1>`
+    for _, of := range OrgFiles {
+        link := fmt.Sprintf(`<a class="index-link" href="%s">%s</a>`, of.WebPath, of.Title)
+        *index += "\n" + link + "\n"
+    }
+    *index += "</body>"
+    htmlFile, err := os.Create("/tmp/rendorg/rendorg_index.html")
+    if err != nil {
+        return err
+    }
+    if _, err := htmlFile.Write([]byte(*index)); err != nil {
+        return err
+    }
     return nil
 }
