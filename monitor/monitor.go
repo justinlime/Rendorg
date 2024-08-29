@@ -6,7 +6,7 @@ import (
 
 	"github.com/justinlime/Rendorg/v2/config"
 	conv "github.com/justinlime/Rendorg/v2/converter"
-	"github.com/justinlime/Rendorg/v2/utils"
+	// "github.com/justinlime/Rendorg/v2/utils"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/rs/zerolog/log"
@@ -62,15 +62,27 @@ func Monitor() {
                 case event.Has(fsnotify.Remove) ||
                      event.Has(fsnotify.Rename):
                     org := conv.GetOrg(event.Name)
+                    // Regnerate all the files that are linked to this one
                     if org != nil {
                         for _, of := range org.LinkedFrom {
-                            conv.Convert(of.RealPath) 
+                            var newTo []*conv.OrgFile
+                            for _, o := range of.LinkedTo {
+                                if o.RealPath != org.RealPath {
+                                    newTo = append(newTo, o)
+                                }
+                            }
+                            of.LinkedTo = newTo
+                            if _, err := conv.Convert(of.RealPath); err != nil {
+                                log.Error().Err(err).
+                                    Str("file", of.RealPath).
+                                    Msg("Failed to convert org file")
+                            }
+                            log.Info().Str("file", of.RealPath).Msg("Re-converted linked file")
                         }
                     }
-                    conv.ConvertAll() 
                     log.Info().Str("file", event.Name).
                         Str("event", event.Op.String()).
-                        Msg("File changed")
+                        Msg("Monitor")
                 default:
                     continue
                 }

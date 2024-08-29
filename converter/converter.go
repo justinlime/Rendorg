@@ -35,10 +35,9 @@ func Convert(inputFile string) (OrgFile, error) {
     mu.Lock()
     var orgFiles []OrgFile
     for _, of := range OrgFiles {
-        if of.RealPath == inputFile {
-            continue
+        if of.RealPath != inputFile {
+            orgFiles = append(orgFiles, of)
         }
-        orgFiles = append(orgFiles, of)
     }
     OrgFiles = orgFiles
     mu.Unlock()
@@ -145,7 +144,7 @@ func ConvertAll() {
     for _, of := range OrgFiles {
         for _, o := range OrgFiles {
             if ContainsLinkedOrg(&o.LinkedTo, &of) {
-               of.LinkedFrom = append(of.LinkedFrom, &o) 
+                of.LinkedFrom = append(of.LinkedFrom, &o) 
             }
         }
     }
