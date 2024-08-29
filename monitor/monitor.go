@@ -2,10 +2,12 @@ package monitor
 
 import (
 	"io/fs"
+	"os"
 	fp "path/filepath"
 
 	"github.com/justinlime/Rendorg/v2/config"
 	conv "github.com/justinlime/Rendorg/v2/converter"
+
 	// "github.com/justinlime/Rendorg/v2/utils"
 
 	"github.com/fsnotify/fsnotify"
@@ -72,6 +74,14 @@ func Monitor() {
                                 }
                             }
                             of.LinkedTo = newTo
+                            var newOrgs []conv.OrgFile
+                            for _, of := range conv.OrgFiles {
+                                if of.RealPath != org.RealPath {
+                                   newOrgs = append(newOrgs, of)
+                                }
+                            }
+                            conv.OrgFiles = newOrgs
+                            os.RemoveAll(org.HTMLPath)
                             if _, err := conv.Convert(of.RealPath); err != nil {
                                 log.Error().Err(err).
                                     Str("file", of.RealPath).

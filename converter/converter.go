@@ -15,15 +15,6 @@ import (
 	"github.com/niklasfasching/go-org/org"
 )
 
-type OrgFile struct {
-    RealPath      string
-    HTMLPath      string
-    WebPath       string
-    ID            string 
-    Title         string
-    LinkedTo   []*OrgFile
-    LinkedFrom []*OrgFile
-}
 
 var (
     OrgFiles []OrgFile
@@ -141,10 +132,10 @@ func ConvertAll() {
         }
     }
     wg.Wait()
-    for _, of := range OrgFiles {
-        for _, o := range OrgFiles {
-            if ContainsLinkedOrg(&o.LinkedTo, &of) {
-                of.LinkedFrom = append(of.LinkedFrom, &o) 
+    for i := range OrgFiles {
+        for j := range OrgFiles {
+            if ContainsLinkedOrg(&OrgFiles[j].LinkedTo, &OrgFiles[i]) {
+                OrgFiles[i].LinkedFrom = append(OrgFiles[i].LinkedFrom, &OrgFiles[j]) 
             }
         }
     }
