@@ -16,12 +16,13 @@ import (
 )
 
 type OrgFile struct {
-    RealPath string
-    HTMLPath string
-    WebPath  string
-    ID       string 
-    Title    string
-    LinkedIDs []string
+    RealPath      string
+    HTMLPath      string
+    WebPath       string
+    ID            string 
+    Title         string
+    LinkedTo   []*OrgFile
+    LinkedFrom []*OrgFile
 }
 
 var (
@@ -107,9 +108,11 @@ func ConvertAll() {
             Str("dir", config.Cfg.InputDir).
             Msg("Failed to recurse through the input directory")
     }
+    // Create these will be regenerated in Convert(), but we need to
+    // Generate them beforehand to gather the initial IDs to compare against
     for _, org := range orgFiles {
         if fp.Ext(org) == ".org" {
-            of, err:= NewOrg(org)
+            of, err := NewOrg(org)
             if err != nil {
                 log.Error().Err(err).
                     Str("file", org).
@@ -139,11 +142,36 @@ func ConvertAll() {
         }
     }
     wg.Wait()
+    for _, of := range OrgFiles {
+        for _, o := range OrgFiles {
+            if ContainsLinkedOrg(&o.LinkedTo, &of) {
+               of.LinkedFrom = append(of.LinkedFrom, &o) 
+            }
+        }
+    }
     if err := GenIndex(); err != nil {
         log.Error().Err(err).Msg("Failed to generate the index page") 
     }
     duration := fmt.Sprintf("%fs", time.Since(begin).Seconds())
     log.Info().Int("org_files_converted", count).Str("time_elapsed", duration).Msg("Conversion Complete")
+}
+
+func ContainsLinkedOrg(contents *[]*OrgFile, orgFile *OrgFile) bool {
+    for _, of := range *contents {
+        if orgFile.RealPath == of.RealPath {
+            return true
+        }
+    }
+    return false
+}
+
+func GetOrg(inputFile string) *OrgFile {
+    for _, of := range OrgFiles {
+        if of.RealPath == inputFile {
+           return &of 
+        }
+    }
+    return nil
 }
 
 func NewOrg(inputFile string) (OrgFile, error) {
@@ -157,9 +185,19 @@ func NewOrg(inputFile string) (OrgFile, error) {
     if err != nil {
         return OrgFile{}, err
     }
-    linkedIDs, err := GetRoamIDs(inputFile)
+    ids, err := GetRoamIDs(inputFile)
     if err != nil {
         return OrgFile{}, err
+    }
+    var linkedTo []*OrgFile
+    for _, id := range ids {
+        for _, of := range OrgFiles {
+            if of.ID == id {
+                if !ContainsLinkedOrg(&linkedTo, &of) {
+                    linkedTo = append(linkedTo, &of)
+                }
+            } 
+        }
     }
     webPath := strings.TrimSuffix(strings.ReplaceAll(inputFile, config.Cfg.InputDir, ""), ".org")
     htmlPath := strings.ReplaceAll(strings.ReplaceAll(inputFile, config.Cfg.InputDir, "/tmp/rendorg"), ".org", ".html")
@@ -170,7 +208,7 @@ func NewOrg(inputFile string) (OrgFile, error) {
         WebPath: webPath,
         ID: id,
         Title: title,
-        LinkedIDs: linkedIDs,
+        LinkedTo: linkedTo,
     }
     OrgFiles = append(OrgFiles, orgFile)
     return orgFile, nil

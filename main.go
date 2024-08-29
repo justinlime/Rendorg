@@ -52,16 +52,6 @@ func main() {
         Msg("Using the following directories")
     config.InitConfig(configDir, inputDir)
     conv.ConvertAll()
-    // for _, org := range conv.OrgFiles {
-    //     log.Info().
-    //         Str("RealPath", org.RealPath).
-    //         Str("HTMLPath", org.HTMLPath).
-    //         Str("WebPath", org.WebPath).
-    //         Str("Title", org.Title).
-    //         Strs("LinkedIDs", org.LinkedIDs).
-    //         Msg("Org File")
-    // 
-    // }
     // go monitor.Monitor()
     webserver.StartServer()
 }

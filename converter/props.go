@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
     "regexp"
+	// "github.com/justinlime/Rendorg/v2/utils"
 )
 
 // Scan an org file for tags using a key, such as :TITLE
@@ -68,12 +69,13 @@ func GetRoamIDs(filePath string) ([]string, error) {
 // Resolve org roam links in the file to actual HTML links
 func ResolveLinks(contents *string, orgFile OrgFile) *string {
     resolved := *contents
-    for _, org := range OrgFiles {
-        // log.Info().Strs("ids", org.LinkedIDs).Str("comapred-id", org.ID).Msg("Test")
-        if utils.Contains(orgFile.LinkedIDs, org.ID) {
-            origLink := fmt.Sprintf(`href="id:%s"`, org.ID)
-            replLink := fmt.Sprintf(`href="%s"`, org.WebPath)
-            resolved = strings.ReplaceAll(resolved, origLink, replLink)
+    for _, of := range orgFile.LinkedTo {
+        for _, linked := range OrgFiles {
+            if of.ID == linked.ID {
+                origLink := fmt.Sprintf(`href="id:%s"`, linked.ID)
+                replLink := fmt.Sprintf(`href="%s"`, linked.WebPath)
+                resolved = strings.ReplaceAll(resolved, origLink, replLink)
+            }
         }
     }
     return &resolved

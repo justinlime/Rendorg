@@ -6,6 +6,7 @@ import (
 
 	"github.com/justinlime/Rendorg/v2/config"
 	conv "github.com/justinlime/Rendorg/v2/converter"
+	"github.com/justinlime/Rendorg/v2/utils"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/rs/zerolog/log"
@@ -59,10 +60,12 @@ func Monitor() {
                 }
                 switch {
                 case event.Has(fsnotify.Remove) ||
-                     event.Has(fsnotify.Create) ||
-                     event.Has(fsnotify.Write):
-                    if event.Op.String() != "REMOVE" {
-                        watchDir(watcher, event.Name)
+                     event.Has(fsnotify.Rename):
+                    org := conv.GetOrg(event.Name)
+                    if org != nil {
+                        for _, of := range org.LinkedFrom {
+                            conv.Convert(of.RealPath) 
+                        }
                     }
                     conv.ConvertAll() 
                     log.Info().Str("file", event.Name).
