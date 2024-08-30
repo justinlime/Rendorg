@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
     "regexp"
-	// "github.com/justinlime/Rendorg/v2/utils"
+	"github.com/justinlime/Rendorg/v2/utils"
 )
 
 // Scan an org file for tags using a key, such as :TITLE
@@ -40,6 +40,7 @@ func GetProperty(key string, filePath string) (string, error) {
 }
 
 // Returns the ID's of all RoamLinks in a file
+// Without duplicates
 func GetRoamIDs(filePath string) ([]string, error) {
     var matchedIDs []string
     file, err := os.Open(filePath)
@@ -57,7 +58,9 @@ func GetRoamIDs(filePath string) ([]string, error) {
             ids := re.FindAllStringSubmatch(line, -1)
             for _, id := range ids {
                 if len(id) > 1 {
-                    matchedIDs = append(matchedIDs, id[1])
+                    if !utils.Contains(matchedIDs, id[1]) {
+                        matchedIDs = append(matchedIDs, id[1])
+                    }
                 }
             }
         }
@@ -69,14 +72,10 @@ func GetRoamIDs(filePath string) ([]string, error) {
 // Resolve org roam links in the file to actual HTML links
 func ResolveLinks(contents *string, orgFile OrgFile) *string {
     resolved := *contents
-    for _, of := range orgFile.LinkedTo {
-        for _, linked := range OrgFiles {
-            if of.ID == linked.ID {
-                origLink := fmt.Sprintf(`href="id:%s"`, linked.ID)
-                replLink := fmt.Sprintf(`href="%s"`, linked.WebPath)
-                resolved = strings.ReplaceAll(resolved, origLink, replLink)
-            }
-        }
+    for _, of := range orgFile.LinkedTo() {
+        origLink := fmt.Sprintf(`href="id:%s"`, of.ID)
+        replLink := fmt.Sprintf(`href="%s"`, of.WebPath)
+        resolved = strings.ReplaceAll(resolved, origLink, replLink)
     }
     return &resolved
 }

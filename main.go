@@ -52,6 +52,14 @@ func main() {
         Msg("Using the following directories")
     config.InitConfig(configDir, inputDir)
     conv.ConvertAll()
+    // for _, of := range conv.OrgFiles {
+    //     for _, lt := range of.LinkedTo() {
+    //         log.Info().Str("file", of.Title).Str("linked_to", lt.Title).Msg("Link")
+    //     }
+    //     for _, lf := range of.LinkedFrom() {
+    //         log.Info().Str("file", of.Title).Str("linked_from", lf.Title).Msg("Link")
+    //     }
+    // }
     go monitor.Monitor()
     webserver.StartServer()
 }
