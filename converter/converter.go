@@ -37,6 +37,7 @@ func Convert(inputFile string) (OrgFile, error) {
 	d := org.New().Parse(file, inputFile)
 	write := func(w org.Writer) (*string, error) {
         prefix, err := generatePrefix(orgFile.Title)
+        *prefix += "<body id=org-body>"
         if err != nil {
             return nil, fmt.Errorf("Failed to generate prefix for org file: %v", err)
         }

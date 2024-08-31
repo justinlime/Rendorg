@@ -65,7 +65,6 @@ func generatePrefix(title string) (*string, error) {
             prefix += fmt.Sprintf(`<script src="%s" defer></script>` + "\n", strings.ReplaceAll(js, config.Cfg.InputDir, ""))
         }
     }
-    prefix += "<body>\n"
     return &prefix, nil
 }
 
@@ -98,12 +97,12 @@ func GenIndex() error {
     if err != nil {
         return fmt.Errorf("Failed to generate index - %v", err)
     }
-    *index += `<h1 class="index-title" id="index-title">Rendorg</h1>`
+    *index += indexPrefix
     for _, of := range OrgFiles {
         link := fmt.Sprintf(`<a class="index-link" href="%s">%s</a>`, of.WebPath, of.Title)
         *index += "\n" + link + "\n"
     }
-    *index += "</body>"
+    *index += indexSuffix
     htmlFile, err := os.Create("/tmp/rendorg/rendorg_index.html")
     if err != nil {
         return err
@@ -113,3 +112,39 @@ func GenIndex() error {
     }
     return nil
 }
+
+var indexPrefix string = `
+<body id=index-body>
+  <h1 class="index-title" id="index-title">Rendorg</h1>
+    <div id="search-container">
+      <input id="searchbar" 
+             onkeyup="search()" 
+             type="text" name="search" 
+             placeholder="Search...">
+    </div>
+    <div id="link-container">
+`
+var indexSuffix string = `
+    </div>
+    <script>
+      let origList = [];
+      for (let orig of document.getElementsByClassName('index-link')) {
+         origList.push(orig.style.display) 
+      }
+      function search() {
+        let input = document.getElementById('searchbar').value
+        input = input.toLowerCase();
+        let x = document.getElementsByClassName('index-link');
+
+        for (i = 0; i < x.length; i++) {
+          if (!x[i].innerHTML.toLowerCase().includes(input)) {
+            x[i].style.display = "none";
+          }
+          else {
+            x[i].style.display = origList[i];
+          }
+        }
+      }
+    </script>
+</body>
+`
