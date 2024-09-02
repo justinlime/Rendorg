@@ -66,6 +66,20 @@ func Monitor() {
 
 	done := make(chan bool)
 	go func() {
+        convLinkedFrom := func (event fsnotify.Event, orgFile conv.OrgFile) {
+            for _, of := range orgFile.LinkedFrom() {
+                if _, err := conv.Convert(of.RealPath); err != nil {
+                    log.Error().Err(err).
+                        Str("event", event.Op.String()).
+                        Str("file", of.RealPath).
+                        Msg("Failed to re-convert linked org file")
+                }
+                log.Info().
+                    Str("event", event.Op.String()).
+                    Str("file", of.RealPath).
+                    Msg("Re-converted linked org file")
+            }
+        }
 		for {
 			select {
 			case event, ok := <-watcher.Events:
@@ -74,6 +88,7 @@ func Monitor() {
                     return
                 }
                 switch {
+                // Rename will send a create signal directly after
                 case event.Has(fsnotify.Remove) ||
                      event.Has(fsnotify.Rename):
                     o := conv.GetOrg(event.Name)
@@ -82,21 +97,28 @@ func Monitor() {
                     }
                     org := *o
                     conv.RmOrg(event.Name)
-                    for _, of := range org.LinkedFrom() {
-                        if _, err := conv.Convert(of.RealPath); err != nil {
-                            log.Error().Err(err).
-                                Str("event", event.Op.String()).
-                                Str("file", of.RealPath).
-                                Msg("Failed to re-convert linked org file")
-                        }
-                        log.Info().Str("file", of.RealPath).Msg("Re-converted linked org file")
-                    }
+                    convLinkedFrom(event, org)
                     log.Info().
                         Str("file", event.Name).
                         Str("event", event.Op.String()).
                         Msg("Monitor")
-                case event.Has(fsnotify.Create) ||
-                     event.Has(fsnotify.Write):
+                case event.Has(fsnotify.Create):
+                    watchDir(watcher, event.Name)
+                    if fp.Ext(event.Name) == ".org" {
+                        of, err := conv.Convert(event.Name)
+                        if err != nil {
+                            log.Error().Err(err).
+                                Str("event", event.Op.String()).
+                                Str("file", event.Name).
+                                Msg("Failed to convert org file")
+                        }
+                        log.Info().
+                            Str("event", event.Op.String()).
+                            Str("file", event.Name).
+                            Msg("Converted org file")
+                        convLinkedFrom(event, of)
+                    }
+                case event.Has(fsnotify.Write):
                     watchDir(watcher, event.Name)
                     if fp.Ext(event.Name) == ".org" {
                         _, err := conv.Convert(event.Name)

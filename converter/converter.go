@@ -18,6 +18,8 @@ import (
 
 var mu sync.Mutex
 
+// TODO convert currently does not resolve internal heading links. (*heading1 or #heading1)
+// TODO maybe also include link resolution to external files
 func Convert(inputFile string) (OrgFile, error) {
     // Remove the previous entries
     mu.Lock()
