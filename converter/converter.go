@@ -35,34 +35,35 @@ func Convert(inputFile string) (OrgFile, error) {
     if err != nil {
         return OrgFile{}, fmt.Errorf("Failed to gather org file info: %v", err)
     }
-    // Convert the file
-	d := org.New().Parse(file, inputFile)
-	write := func(w org.Writer) (*string, error) {
-        prefix, err := generatePrefix(orgFile.Title)
-        *prefix += "<body id=org-body>"
-        if err != nil {
-            return nil, fmt.Errorf("Failed to generate prefix for org file: %v", err)
-        }
-		body, err := d.Write(w)
-		if err != nil {
-            return nil, fmt.Errorf("Failed to convert the requested file: %v", err)
-		}
-        suffix := `
-        </body>
-        `
-        contents := *prefix + body + suffix
-        return &contents, nil
-	}
+    // Parser Config
+    orgConfig := org.New().Silent()
+    orgConfig.AutoLink = true
+    orgConfig.DefaultSettings = map[string]string{
+        // Default settings for each field, if none are supplied in the doc
+        "TODO": "TODO | DONE",
+        "EXCLUDE_TAGS": "noexport",
+		"OPTIONS":      "toc:t <:t e:t f:t pri:t todo:t tags:t title:t ealb:nil",
+    }
     writer := org.NewHTMLWriter()
     writer.HighlightCodeBlock = highlightCodeBlock
-    htmlContents, err := write(writer)
+    // Generate the HTML
+    prefix, err := generatePrefix(orgFile.Title)
+    *prefix += "<body id=org-body>"
+
+    body, err := orgConfig.Parse(file, inputFile).Write(writer)
     if err != nil {
-        return OrgFile{}, err 
+        return OrgFile{}, fmt.Errorf("Failed to parse org body: %v", err) 
     }
-    // Resolve the links
+
+    suffix := "</body>"
+
+    htmlContents := *prefix + body + suffix
+
+    // Resolve the ID links
     mu.Lock()
-    htmlResolved := ResolveLinks(htmlContents, orgFile)
+    htmlResolved := ResolveIDLinks(&htmlContents, orgFile)
     mu.Unlock()
+
     // Write the file 
     err = os.MkdirAll(fp.Dir(orgFile.HTMLPath), 0755)
     if err != nil {
@@ -107,6 +108,8 @@ func ConvertAll() {
         }
     }
     var wg sync.WaitGroup
+    // Diminishing returns after 3 threads from the systems I've tested on
+    // This is mostly done for startup time
     ch := make(chan struct{}, 3)
     var count int
     for _, org := range orgFiles {
@@ -132,15 +135,6 @@ func ConvertAll() {
     }
     duration := fmt.Sprintf("%fs", time.Since(begin).Seconds())
     log.Info().Int("org_files_converted", count).Str("time_elapsed", duration).Msg("Conversion Complete")
-}
-
-func ContainsLinkedOrg(contents *[]*OrgFile, orgFile *OrgFile) bool {
-    for _, of := range *contents {
-        if orgFile.RealPath == of.RealPath {
-            return true
-        }
-    }
-    return false
 }
 
 func NewOrg(inputFile string) (OrgFile, error) {

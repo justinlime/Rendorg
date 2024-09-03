@@ -68,10 +68,9 @@ func GetRoamIDs(filePath string) ([]string, error) {
     return matchedIDs, nil
 }
 
-
 // Resolve org roam links in the file to actual HTML links
-func ResolveLinks(contents *string, orgFile OrgFile) *string {
-    resolved := *contents
+func ResolveIDLinks(html *string, orgFile OrgFile) *string {
+    resolved := *html
     for _, of := range orgFile.LinkedTo() {
         origLink := fmt.Sprintf(`href="id:%s"`, of.ID)
         replLink := fmt.Sprintf(`href="%s"`, of.WebPath)

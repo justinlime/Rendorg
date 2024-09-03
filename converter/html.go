@@ -91,7 +91,6 @@ func highlightCodeBlock(source, lang string, inline bool, params map[string]stri
 	return `<div class="highlight">` + "\n" + w.String() + "\n" + `</div>`
 }
 
-// TODO add searching feature
 func GenIndex() error {
     index, err := generatePrefix("Rendorg")     
     if err != nil {
