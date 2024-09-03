@@ -1,0 +1,15 @@
+* Features to be added
+** Optional Features [0/5]
+- [ ] - working and secure authentication system
+- [ ] - user supplied prefix and suffix HTML for org, and index
+- [ ] - user supplied JS and CSS specifically for index
+- [ ] - user supplied configuration org parser default config
+- [ ] - whitelist/blacklist mode, based on a =#+= org prop
+
+** Changes [0/3]
+- [ ] - allow for user defined output dir for the HTML
+- [ ] - allow user defined dir for the imported JS and CSS
+- [ ] - port number should be a flag, not a config file option
+
+** Fixes [0/1]
+- [ ] - Handle panics in the monitor routine
