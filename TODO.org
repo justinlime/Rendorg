@@ -4,12 +4,13 @@
 - [ ] - user supplied prefix and suffix HTML for org, and index
 - [ ] - user supplied JS and CSS specifically for index
 - [ ] - user supplied configuration org parser default config
-- [ ] - whitelist/blacklist mode, based on a =#+= org prop
+- [ ] - whitelist/blacklist inclusion mode, based on a =#+= org prop
 
-** Changes [0/3]
+** Changes [0/4]
 - [ ] - allow for user defined output dir for the HTML
 - [ ] - allow user defined dir for the imported JS and CSS
 - [ ] - port number should be a flag, not a config file option
+- [ ] - get all properties necessary in a single scan, store in struct
 
-** Fixes [0/1]
-- [ ] - Handle panics in the monitor routine
+** Fixes [1/1]
+- [X] - Handle panics in the monitor routine

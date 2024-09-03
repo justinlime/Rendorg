@@ -15,6 +15,12 @@ import (
 )
 
 func watchDir(watcher *fsnotify.Watcher, dir string) {
+    // Fast additions and removals may trigger a nil pointer deref
+    defer func() {
+        if r := recover(); r != nil {
+            log.Debug().Msg("Recovered from panic, file likely moved too fast.")
+        }
+    }()
     d, err := os.Stat(dir)
     if err != nil {
         log.Warn().Err(err).
