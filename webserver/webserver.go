@@ -30,16 +30,16 @@ func Serve(w http.ResponseWriter, r *http.Request) {
 // TODO make auth optional, actually store in a secure way
 func Auth(next http.Handler) http.Handler {
         return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				// next.ServeHTTP(w, r)
+        user, pass, ok := r.BasicAuth()
+        if ok {
+            if user == config.Cfg.Username && pass == config.Cfg.Password {
 				next.ServeHTTP(w, r)
-        // user, pass, ok := r.BasicAuth()
-        // if ok {
-        //     if user == config.Cfg.Username && pass == config.Cfg.Password {
-		// 		next.ServeHTTP(w, r)
-		// 		return
-        //     }
-        // }
-        // w.Header().Set("WWW-Authenticate", `Basic realm="Protected Area"`)
-        // http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+            }
+        }
+        w.Header().Set("WWW-Authenticate", `Basic realm="Protected Area"`)
+        http.Error(w, "Unauthorized", http.StatusUnauthorized)
         return
     })
 }

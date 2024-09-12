@@ -50,7 +50,7 @@ func main() {
         Str("input_dir", inputDir).
         Str("config_dir", configDir).
         Msg("Using the following directories")
-    config.InitConfig(configDir, inputDir)
+    config.InitConfig(inputDir)
     conv.ConvertAll()
     // for _, of := range conv.OrgFiles {
     //     for _, lt := range of.LinkedTo() {

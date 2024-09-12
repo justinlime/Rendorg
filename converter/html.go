@@ -29,26 +29,26 @@ func generatePrefix(title string) (*string, error) {
     var cssFiles []string
     var jsFiles []string
 
-    styleDir := fp.Join(config.Cfg.InputDir, "style")
+    styleDir := fp.Join(config.Cfg.ConfigDir, "style")
     _, err := os.Stat(styleDir)
     if err != nil {
         log.Warn().Err(err).Str("dir", styleDir).
             Msg("Couldn't stat style dir, nothing will be applied.")    
     } else {
-        cssFiles , err = utils.GetPathsRecursively(fp.Join(config.Cfg.InputDir, "style")) 
+        cssFiles , err = utils.GetPathsRecursively(styleDir) 
         if err != nil {
             log.Warn().Err(err).Str("dir", styleDir).
                 Msg("Coudln't read style dir, nothing will be applied")
         }
     }
 
-    jsDir := fp.Join(config.Cfg.InputDir, "js")
+    jsDir := fp.Join(config.Cfg.ConfigDir, "js")
     _, err = os.Stat(jsDir)
     if err != nil {
         log.Warn().Err(err).Str("dir", jsDir).
             Msg("Couldn't stat js dir, nothing will be applied.")
     } else {
-        jsFiles , err = utils.GetPathsRecursively(fp.Join(config.Cfg.InputDir, "js")) 
+        jsFiles , err = utils.GetPathsRecursively(jsDir) 
         if err != nil {
             log.Warn().Err(err).Str("dir", jsDir).
                 Msg("Coudln't read js dir, nothing will be applied")
