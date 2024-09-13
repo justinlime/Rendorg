@@ -17,13 +17,11 @@ import (
 var (
     // flags
     inputDir string
-    configDir string
     debug bool
 )
 
 func init() {
     flag.StringVar(&inputDir, "input", ".", "Directory containing your org files")
-    flag.StringVar(&configDir, "config", "~/.config/rendorg", "Directory containing your rendorg.toml file")
     flag.BoolVar(&debug, "debug", false, "Enable debugging logs")
     flag.Parse()
     if debug {
@@ -38,19 +36,13 @@ func init() {
             Err(err).
             Msg("Could not validate input")
     } 
-    if err := utils.ValidatePath(&configDir); err != nil {
-        log.Fatal().
-            Str("input_dir", inputDir).
-            Err(err).
-            Msg("Could not validate input")
-    }
 }
 func main() {
-    log.Info().
-        Str("input_dir", inputDir).
-        Str("config_dir", configDir).
-        Msg("Using the following directories")
     config.InitConfig(inputDir)
+    log.Info().
+        Str("config_dir", config.Cfg.ConfigDir).
+        Str("input_dir", config.Cfg.InputDir).
+        Msg("Using the following directories")
     conv.ConvertAll()
     // for _, of := range conv.OrgFiles {
     //     for _, lt := range of.LinkedTo() {

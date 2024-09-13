@@ -3,6 +3,7 @@ package webserver
 import (
 	"fmt"
 	"net/http"
+    "strings"
 	fp "path/filepath"
 
 	"github.com/justinlime/Rendorg/v2/config"
@@ -18,8 +19,9 @@ func Serve(w http.ResponseWriter, r *http.Request) {
         http.ServeFile(w, r, "/tmp/rendorg/rendorg_index.html")
         return
     }
+    noHTML := strings.TrimSuffix(r.URL.Path, ".html")
     for _, of := range conv.OrgFiles {
-        if r.URL.Path == of.WebPath {
+        if noHTML == of.WebPath {
             http.ServeFile(w, r, of.HTMLPath)
             return
         }
