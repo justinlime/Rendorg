@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+    "bytes"
 	"strings"
     "regexp"
 	"github.com/justinlime/Rendorg/v2/utils"
@@ -69,8 +70,8 @@ func GetRoamIDs(filePath string) ([]string, error) {
 }
 
 // Resolve org roam links in the file to actual HTML links
-func ResolveIDLinks(html *string, orgFile OrgFile) *string {
-    resolved := *html
+func ResolveIDLinks(html *bytes.Buffer, orgFile OrgFile) *string {
+    resolved := html.String()
     for _, of := range orgFile.LinkedTo() {
         origLink := fmt.Sprintf(`href="id:%s"`, of.ID)
         replLink := fmt.Sprintf(`href="%s"`, of.WebPath)

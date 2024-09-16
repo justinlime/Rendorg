@@ -5,9 +5,12 @@ import (
     "fmt"
     "sync"
     "time"
+    "bytes"
 	"strings"
+    templ "html/template"
 	fp "path/filepath"
 
+	"github.com/justinlime/Rendorg/v2/templates"
 	"github.com/justinlime/Rendorg/v2/utils"
 	"github.com/justinlime/Rendorg/v2/config"
 
@@ -47,18 +50,31 @@ func Convert(inputFile string) (OrgFile, error) {
     writer := org.NewHTMLWriter()
     writer.HighlightCodeBlock = highlightCodeBlock
     // Generate the HTML
-    prefix, err := generatePrefix(orgFile.Title)
-    *prefix += "<body id=org-body>"
-
     body, err := orgConfig.Parse(file, inputFile).Write(writer)
     if err != nil {
         return OrgFile{}, fmt.Errorf("Failed to parse org body: %v", err) 
     }
 
-    suffix := "</body>"
-
-    htmlContents := *prefix + body + suffix
-
+    var htmlContents bytes.Buffer
+    templs, err := templ.ParseFS(
+        templates.EHTML,
+        "org.html",
+    )
+    if err != nil {
+        log.Error().Err(err).Msg("Failed to parse the templates")
+    }
+    err = templs.ExecuteTemplate(&htmlContents, "body", struct{
+        Title string
+        Body templ.HTML
+    } {
+        Title: orgFile.Title,
+        // Insert raw HTML
+        Body: templ.HTML(body),
+    })
+    if err != nil {
+        log.Error().Err(err).Msg("Failed to execute the templates")
+    }
+    
     // Resolve the ID links
     mu.Lock()
     htmlResolved := ResolveIDLinks(&htmlContents, orgFile)
