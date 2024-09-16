@@ -63,14 +63,7 @@ func Convert(inputFile string) (OrgFile, error) {
     if err != nil {
         log.Error().Err(err).Msg("Failed to parse the templates")
     }
-    err = templs.ExecuteTemplate(&htmlContents, "body", struct{
-        Title string
-        Body templ.HTML
-    } {
-        Title: orgFile.Title,
-        // Insert raw HTML
-        Body: templ.HTML(body),
-    })
+    err = templs.ExecuteTemplate(&htmlContents, "body", templ.HTML(body))
     if err != nil {
         log.Error().Err(err).Msg("Failed to execute the templates")
     }
